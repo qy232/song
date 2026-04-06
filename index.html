@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+    <title>随机抽取 · 歌单轮盘</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0c1a1f 0%, #1e2f36 100%);
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(18, 32, 38, 0.8);
+            backdrop-filter: blur(14px);
+            border-radius: 60px 60px 44px 44px;
+            padding: 28px 28px 36px;
+            box-shadow: 0 30px 40px -12px rgba(0, 0, 0, 0.8), inset 0 1px 4px rgba(255, 255, 255, 0.08);
+            border: 1px solid #3f6e7a;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            color: #e6f7f2;
+            text-shadow: 0 2px 5px #0a1a1e;
+            padding: 0 8px;
+        }
+
+        .title {
+            font-size: 34px;
+            font-weight: 900;
+            background: linear-gradient(to right, #ffd88f, #a8e6cf);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #28545c;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 17px;
+            color: #fbefb5;
+            border: 1px solid #9acfd6;
+            box-shadow: inset 0 -2px 0 #0e2a30;
+            font-weight: 600;
+        }
+
+        .badge a {
+            color: green;
+            text-decoration: none;
+        }
+
+        .badge a:hover {
+            color: red;
+
+        }
+
+
+        .wheel-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .wheel-box {
+            position: relative;
+            width: 360px;
+            height: 360px;
+            flex-shrink: 0;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 50%;
+            box-shadow: 0 0 0 10px #203b42, 0 0 0 14px #46727e, 0 18px 35px black;
+            transition: 0.2s;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%) scale(1.6);
+            font-size: 52px;
+            color: #ffe082;
+            filter: drop-shadow(0 16px 8px #00000066);
+            text-shadow: 0 0 10px #ffae5e, 0 0 20px #ffc85a;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .result-panel {
+            flex: 1;
+            min-width: 260px;
+            background: #10262b;
+            border-radius: 48px;
+            padding: 24px 22px;
+            border: 2px solid #70a9b2;
+            box-shadow: inset 0 -6px 0 #0a1c20, inset 0 2px 15px #93cad2;
+        }
+
+        .result-label {
+            color: #b1dbdf;
+            font-size: 18px;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px dashed #43747e;
+            padding-bottom: 10px;
+        }
+
+        .result-content {
+            background: #0b1e22;
+            border-radius: 30px;
+            padding: 20px 20px;
+            border: 2px solid #6aa7b0;
+            box-shadow: inset 0 0 20px #15373d;
+        }
+
+        .prize-name {
+            font-size: 38px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #fff3b7;
+            text-shadow: 0 0 10px #ffa93c, 0 0 30px #ff962b;
+            word-break: break-word;
+        }
+
+        .prize-desc {
+            color: #b1ecf0;
+            margin-top: 10px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0 10px;
+        }
+
+        .spin-btn {
+            background: radial-gradient(circle at 20% 30%, #ffe070, #f5aa3a);
+            border: none;
+            border-bottom: 10px solid #9e601c;
+            font-size: 36px;
+            font-weight: bold;
+            color: #1c282c;
+            padding: 16px 58px;
+            border-radius: 80px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 12px 0 #664115, 0 20px 30px black;
+            transition: 0.06s linear;
+            cursor: pointer;
+            letter-spacing: 12px;
+        }
+
+        .spin-btn:active {
+            transform: translateY(10px);
+            box-shadow: 0 2px 0 #4d3110, 0 20px 30px black;
+            border-bottom-width: 4px;
+        }
+
+        .spin-btn:disabled {
+            opacity: 0.5;
+            transform: translateY(6px);
+            box-shadow: 0 6px 0 #4d3110, 0 20px 30px black;
+            pointer-events: none;
+        }
+
+        .voice-badge {
+            background: #1a3d45;
+            padding: 12px 26px;
+            border-radius: 60px;
+            font-size: 22px;
+            color: #f9e38a;
+            border: 2px solid #ffd46b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .library-tag {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #3b6972;
+            color: #a5d2d7;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .source-grid {
+            display: flex;
+            gap: 12px;
+            font-size: 15px;
+            background: #1a3a40;
+            padding: 10px 20px;
+            border-radius: 40px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #2b5963;
+            padding: 5px 16px;
+            border-radius: 50px;
+            color: #fce781;
+            font-weight: 500;
+            border: 1px solid #cbb26a;
+        }
+
+        .footer-note {
+            color: #86b9bb;
+            font-style: italic;
+        }
+
+        @media (max-width: 800px) {
+            .wheel-box {
+                width: 300px;
+                height: 300px;
+            }
+
+            .prize-name {
+                font-size: 30px;
+            }
+
+            .spin-btn {
+                font-size: 28px;
+                padding: 12px 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                🎵 随机轮盘 · 歌单集
+                <span style="font-size:24px;">🎰 抽取</span>
+            </div>
+            <div class="badge">
+                🎤 歌单
+            </div>
+            <!-- <div class="badge">
+                <a href="../index.html">回到首页</a>
+            </div> -->
+        </div>
+
+        <div class="wheel-section">
+            <div class="wheel-box">
+                <canvas id="wheelCanvas" width="540" height="540"></canvas>
+                <div class="pointer">⏺️</div>
+            </div>
+
+            <div class="result-panel">
+                <div class="result-label">
+                    <span>🎲 本次抽中</span>
+                    <span style="margin-left:auto;">🔊 语音播报</span>
+                </div>
+                <div class="result-content">
+                    <div class="prize-name" id="prizeNameDisplay">归</div>
+                    <div class="prize-desc" id="prizeSubDisplay">🎤 点击转盘开始</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="spin-btn" id="spinButton">
+                🚀 抽
+            </button>
+            <div class="voice-badge">
+                <span>🔊 朗读</span>
+                <span style="font-size:28px;">🎤</span>
+            </div>
+        </div>
+
+        <div class="library-tag">
+            <div class="source-grid">
+                <div class="tag">归</div>
+                <div class="tag">飞</div>
+                <div class="tag">醒</div>
+                <div class="tag">述</div>
+                <div class="tag">工厂</div>
+                <div class="tag">奴隶</div>
+                <div class="tag">峭壁</div>
+                <div class="tag">旷野</div>
+                <div class="tag">骰子</div>
+                <div class="tag">鼻塞</div>
+                <div class="tag">时差</div>
+                <div class="tag">送别</div>
+                <div class="tag">河流</div>
+                <div class="tag">亮剑</div>
+                <div class="tag">麒麟</div>
+                <div class="tag">太极</div>
+                <div class="tag">官窑</div>
+                <div class="tag">子弹</div>
+                <div class="tag">无期</div>
+                <div class="tag">因果</div>
+                <div class="tag">罗马</div>
+                <div class="tag">山脚</div>
+                <div class="tag">达班</div>
+                <div class="tag">套路</div>
+                <div class="tag">挂念</div>
+                <div class="tag">忍者</div>
+                <div class="tag">顽家</div>
+                <div class="tag">北派</div>
+                <div class="tag">健将</div>
+                <div class="tag">宿醉</div>
+                <div class="tag">纵容</div>
+                <div class="tag">母茧</div>
+                <div class="tag">都选c</div>
+                <div class="tag">夜三里</div>
+                <div class="tag">大香蕉</div>
+                <div class="tag">龙派对</div>
+                <div class="tag">罗生门</div>
+                <div class="tag">黑本子</div>
+                <div class="tag">玛丽亚</div>
+                <div class="tag">拟骰子</div>
+                <div class="tag">人上人</div>
+                <div class="tag">栖息地</div>
+                <div class="tag">雨和雨</div>
+                <div class="tag">美杜莎</div>
+                <div class="tag">山歌王</div>
+                <div class="tag">半兽人</div>
+                <div class="tag">观山水</div>
+                <div class="tag">刮大风</div>
+                <div class="tag">来电瑶</div>
+                <div class="tag">莫愁乡</div>
+                <div class="tag">杯莫停</div>
+                <div class="tag">发光弹</div>
+                <div class="tag">未命名</div>
+                <div class="tag">拍拍灰</div>
+                <div class="tag">断水流</div>
+                <div class="tag">周润发</div>
+                <div class="tag">向云端</div>
+                <div class="tag">夜南京</div>
+                <div class="tag">怎么了</div>
+                <div class="tag">3977</div>
+                <div class="tag">C级浪漫</div>
+                <div class="tag">人海人山</div>
+                <div class="tag">隆里电丝</div>
+                <div class="tag">八方来财</div>
+                <div class="tag">未知地带</div>
+                <div class="tag">快人一步</div>
+                <div class="tag">凛冬将至</div>
+                <div class="tag">酒桌杀手</div>
+                <div class="tag">感官先生</div>
+                <div class="tag">猜疑游戏</div>
+                <div class="tag">不用去猜</div>
+                <div class="tag">阿努比斯</div>
+                <div class="tag">百变酒精</div>
+                <div class="tag">男孩别哭</div>
+                <div class="tag">雨说风听</div>
+                <div class="tag">旋转风暴</div>
+                <div class="tag">低矮的屋</div>
+                <div class="tag">仁义茶楼</div>
+                <div class="tag">飞天茅台</div>
+                <div class="tag">无名的人</div>
+                <div class="tag">千禧年代</div>
+                <div class="tag">上学威龙</div>
+                <div class="tag">东海渔人</div>
+                <div class="tag">零点派对</div>
+                <div class="tag">插叙人生</div>
+                <div class="tag">阿司匹林</div>
+                <div class="tag">关于小熊</div>
+                <div class="tag">霓虹甜心</div>
+                <div class="tag">本草纲目</div>
+                <div class="tag">电梯战神</div>
+                <div class="tag">返老还童</div>
+                <div class="tag">别怕变老</div>
+                <div class="tag">当你走了</div>
+                <div class="tag">走得很慢</div>
+                <div class="tag">喜新恋旧</div>
+                <div class="tag">大笑江湖</div>
+                <div class="tag">高草丛中</div>
+                <div class="tag">天下过客</div>
+                <div class="tag">一半一半</div>
+                <div class="tag">东北浩室</div>
+                <div class="tag">茶花开了</div>
+                <div class="tag">女儿殿下</div>
+                <div class="tag">淘金小镇</div>
+                <div class="tag">呼伦贝尔（原创）</div>
+                <div class="tag">赏金排行榜</div>
+                <div class="tag">月半小夜曲</div>
+                <div class="tag">老北京杀器</div>
+                <div class="tag">圣玛伊伦斯</div>
+                <div class="tag">那就这样吧</div>
+                <div class="tag">鲁伯特之泪</div>
+                <div class="tag">星空叙爱曲</div>
+                <div class="tag">一般的一天</div>
+                <div class="tag">你要跳舞吗</div>
+                <div class="tag">嘿！姑娘</div>
+                <div class="tag">party是我家</div>
+                <div class="tag">万物盛开法则</div>
+                <div class="tag">会魔法的老人</div>
+                <div class="tag">赶着回家的人</div>
+                <div class="tag">所以你睡了没</div>
+                <div class="tag">黑暗中的莲花</div>
+                <div class="tag">奴隶x新的一天</div>
+                <div class="tag">想把你留在这里</div>
+                <div class="tag">亚特兰蒂斯之心</div>
+                <div class="tag">春天/挣脱瀚海</div>
+                <div class="tag">三十岁的无业游民</div>
+                <div class="tag">阳光男孩阳光女孩</div>
+                <div class="tag">高，还没富，但帅</div>
+                <div class="tag">如果月亮按时醒来</div>
+                <div class="tag">别非要我大声说出来</div>
+                <div class="tag">请和这样的我恋爱吧</div>
+                <div class="tag">花，太阳，彩虹，你</div>
+                <div class="tag">除了说唱我什么都不会</div>
+                <div class="tag">在真实和荒诞之间起舞</div>
+                <div class="tag">新沈阳cypher</div>
+                <div class="tag">我想remix</div>
+                <div class="tag">我想part2</div>
+                <div class="tag">假面 ghost face</div>
+                <div class="tag">中坚联合cypher</div>
+                <div class="tag">夜之子NIGHTKIDZ</div>
+                <div class="tag">小河淌水1952</div>
+                <div class="tag">my man</div>
+                <div class="tag">coco</div>
+                <div class="tag">restart</div>
+                <div class="tag">Oh life</div>
+                <div class="tag">colt.45</div>
+                <div class="tag">PUSH UP</div>
+                <div class="tag">6ackpack</div>
+                <div class="tag">DD backseat</div>
+                <div class="tag">remenber me</div>
+                <div class="tag">not good</div>
+                <div class="tag">world wide</div>
+                <div class="tag">Hey KONG</div>
+                <div class="tag">my car goes</div>
+                <div class="tag">kill the game</div>
+                <div class="tag">hold my hand</div>
+                <div class="tag">burn me down</div>
+                <div class="tag">black birrrd</div>
+                <div class="tag">Lover boy 88</div>
+                <div class="tag">baby don't go</div>
+                <div class="tag">Life's a struggle</div>
+                <div class="tag">no more nice guy</div>
+                <div class="tag">GAMEBOY Freestyle</div>
+                <div class="tag">a11 money back my home</div>
+                
+            </div>
+            <div class="footer-note">
+                🎚️ 歌单
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            // ---------- 纯歌单----------
+            const ITEMS = [
+                // 截图一 
+                "归", "飞", "醒", "工厂", "奴隶", "峭壁", "旷野", "骰子", "鼻塞", "都选C", /*10*/
+
+                "夜三里", "大香蕉", "龙派对", "罗生门", "黑本子", "玛丽亚", "拟骰子", "人上人", "my man", "嘿！姑娘",/*10*/ 
+
+                "C级浪漫", "隆里电丝", "八方来财", "快人一步", "凛冬将至","感官先生","淘金小镇","东北浩室","月半小夜曲","女儿殿下", /*10*/
+
+                "酒桌杀手", "coco", "栖息地", "雨说风听", "时差", "雨和雨", "旋转风暴", "低矮的屋",
+                "春天/挣脱瀚海", "Oh life",/*10*/
+
+                "高，还没富，但帅", "colt.45", "美杜莎", "天下过客", "送别", "纵容", "一半一半", "怎么了","山歌王","茶花开了",/*10*/
+                
+                "半兽人", "观山水", "刮大风", "来电瑶", "莫愁乡", "杯莫停", "发光弹", "不用去猜", "猜疑游戏", "宿(XIU)醉",/*10*/
+
+                "PUSH UP", "6ackpack", "all money back my home", "not good", "阿努比斯", "百变酒精", "男孩别哭", "除了说唱我什么都不会", "阳光男孩 阳光女孩","world wide",/*10*/
+
+                "Hey KONG", "我想remix", "我想part2", "圣玛伊伦斯", "那就这样吧","鲁伯特之泪", "星空叙爱曲", "一般的一天", "赏金排行榜", "老北京杀器",/*10*/
+
+                "party 是我家","my car goes", "lover boy 88", "kill the game", "黑暗中的莲花", "所以你睡了没", "仁义茶楼","飞天茅台", "无名的人", "千禧年代",/*10*/
+
+                "上学威龙", "东海渔人", "零点派对", "未命名", "3977", "亮剑", "夜南京", "健将", "麒麟", "北派", /*10*/
+                /*100*/
+
+                "顽家", "忍者", "挂念", "套路", "达班", "罗马", "山脚", "因果", "太极", "子弹",/*10*/
+
+                "无期", "官窑","纵容","河流", "亮剑", "Restart", "断水流", "周润发", "向云端", "插叙人生",/*10*/ 
+
+                "阿司匹林", "关于小熊", "霓虹甜心","本草纲目", "电梯战神", "返老还童", "当你走了", "喜新恋旧", "大笑江湖", "高草丛中", /*10*/
+                
+                "拍拍灰","会魔法的老人", "赶着回家的人", "新沈阳cypher", "Hold my hand", "Burn me down", "Black birrrd", "Baby don't go", "小河淌水1952", "花，太阳，彩虹，你", /*10*/
+                
+                "想把你留在这里", "亚特兰蒂斯之心", "奴隶x新的一天", "呼伦贝尔（原创）", "假面ghost face","Life's a struggle", "中坚联合cypher", "No more nice guy", "三十岁的无业游民","夜之子NIGHTKIDZ",/*10*/
+
+                "GAMEBOY Freestyle","Remenber me", "别非要我大声说出来", "请和这样的我恋爱吗","你要跳舞吗","万物盛开法则","人海人山","未知地带","别怕变老","走得很慢",/*10*/
+
+                "母茧","DD backseat","如果月亮按时醒来","述","在真实和荒诞之间起舞"
+                
+            ];
+
+            // 去重保留原始顺序（但去除完全重复）
+            const uniqueItems = [...new Set(ITEMS)];
+            const SEGMENTS = uniqueItems.map((label, index) => {
+                const hue = (index * 47) % 360;  // 错开色相，更丰富
+                return {
+                    label: label,
+                    color: `hsl(${hue}, 68%, 62%)`
+                };
+            });
+
+            const segmentCount = SEGMENTS.length;
+            const PI = Math.PI;
+            const TAU = 2 * PI;
+            const segmentAngle = TAU / segmentCount;
+            const halfAngle = segmentAngle / 2;
+
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const spinBtn = document.getElementById('spinButton');
+            const prizeNameDisplay = document.getElementById('prizeNameDisplay');
+            const prizeSubDisplay = document.getElementById('prizeSubDisplay');
+
+            let currentRotation = 0.0;
+            let isSpinning = false;
+            let animFrameId = null;
+
+            // ----- 语音播报 -----
+            function speakResult(text) {
+                if (!window.speechSynthesis) return;
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                }
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                utterance.text = `抽取到：${text}`;
+                setTimeout(() => {
+                    window.speechSynthesis.speak(utterance);
+                }, 20);
+            }
+
+            // ----- 根据旋转计算当前奖品索引 -----
+            function computePrizeIndex(rotationRad) {
+                const pointerAngle = -PI / 2;
+                let rawAngle = pointerAngle - rotationRad;
+                let normAngle = ((rawAngle % TAU) + TAU) % TAU;
+                let shifted = (normAngle + halfAngle) % TAU;
+                let idx = Math.floor(shifted / segmentAngle);
+                return idx % segmentCount;
+            }
+
+            // ----- 绘制转盘 -----
+            function drawWheel(rotationRad) {
+                const radius = Math.min(canvas.width, canvas.height) * 0.44;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(rotationRad);
+
+                for (let i = 0; i < segmentCount; i++) {
+                    const start = i * segmentAngle - halfAngle;
+                    const end = start + segmentAngle;
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, radius, start, end);
+                    ctx.closePath();
+
+                    ctx.fillStyle = SEGMENTS[i].color;
+                    ctx.fill();
+
+                    ctx.strokeStyle = "rgba(245,245,210,0.3)";
+                    ctx.lineWidth = 1.6;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, radius, start, end);
+                    ctx.lineTo(0, 0);
+                    ctx.stroke();
+                }
+
+                ctx.font = "bold 21px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 1.5;
+                ctx.shadowOffsetY = 1.8;
+                ctx.fillStyle = "#fffdf2";
+
+                for (let i = 0; i < segmentCount; i++) {
+                    const midAngle = i * segmentAngle;
+                    ctx.save();
+                    ctx.rotate(midAngle);
+                    let shortLabel = SEGMENTS[i].label;
+                    if (shortLabel.length > 6) shortLabel = shortLabel.slice(0, 5) + '…';
+                    ctx.fillText(shortLabel, radius * 0.72, 0);
+                    ctx.restore();
+                }
+
+                ctx.beginPath();
+                ctx.arc(0, 0, radius * 0.14, 0, TAU);
+                ctx.fillStyle = "#ffea8f";
+                ctx.shadowBlur = 18;
+                ctx.fill();
+                ctx.restore();
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius + 4, 0, TAU);
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = "#f7da7a";
+                ctx.shadowBlur = 12;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // ----- 旋转动画（最终指向完全随机奖品）-----
+            function spinWheel() {
+                if (isSpinning) return;
+
+                isSpinning = true;
+                spinBtn.disabled = true;
+
+                const startTime = performance.now();
+                const startRotation = currentRotation;
+                const duration = 2100;
+
+                const targetPrizeIdx = Math.floor(Math.random() * segmentCount);
+
+                let baseRot = (-PI / 2 - targetPrizeIdx * segmentAngle) % TAU;
+                baseRot = (baseRot + TAU) % TAU;
+
+                const extraTurns = 10 + Math.floor(Math.random() * 15);
+                const targetRotation = baseRot + extraTurns * TAU;
+
+                function animate(now) {
+                    const elapsed = now - startTime;
+                    let prog = Math.min(elapsed / duration, 1);
+                    prog = 1 - Math.pow(1 - prog, 3);
+                    currentRotation = startRotation + (targetRotation - startRotation) * prog;
+                    drawWheel(currentRotation);
+
+                    if (prog < 1) {
+                        animFrameId = requestAnimationFrame(animate);
+                    } else {
+                        currentRotation = targetRotation;
+                        drawWheel(currentRotation);
+
+                        const finalIdx = computePrizeIndex(currentRotation);
+                        const prizeLabel = SEGMENTS[finalIdx].label;
+
+                        prizeNameDisplay.innerText = prizeLabel;
+                        prizeSubDisplay.innerText = "🎵 随机歌单 · 语音播报";
+
+                        speakResult(prizeLabel);
+
+                        isSpinning = false;
+                        spinBtn.disabled = false;
+                        animFrameId = null;
+                    }
+                }
+
+                animFrameId = requestAnimationFrame(animate);
+            }
+
+            // ----- 初始化 -----
+            function init() {
+                // 初始指向第一个 “归”
+                let initIdx = 0;
+                let initRot = (-PI / 2 - initIdx * segmentAngle) % TAU;
+                initRot = (initRot + TAU) % TAU;
+                currentRotation = initRot;
+                drawWheel(currentRotation);
+
+                prizeNameDisplay.innerText = SEGMENTS[0].label;
+                prizeSubDisplay.innerText = "🎤 点击转盘或按钮抽取";
+
+                spinBtn.addEventListener('click', spinWheel);
+                canvas.addEventListener('click', spinWheel);
+
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+
+            init();
+        })();
+    </script>
+</body>
+
+</html>
